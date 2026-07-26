@@ -84,7 +84,7 @@ toolchain:
 
 planning:
   repo: verygreenboi/ai-assignment
-  project: 1   # backfilled at materialization — the ProjectV2 does not exist yet
+  project: 2   # https://github.com/users/verygreenboi/projects/2
 
 merge:
   method: squash
