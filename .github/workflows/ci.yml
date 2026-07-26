@@ -14,6 +14,11 @@ jobs:
     name: ci
     runs-on: ubuntu-latest
 
+    # The service below maps 5433:5432 and every step runs on the runner host,
+    # so `localhost:5433` is what the steps see — identical to `.env.example`.
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5433/collab_docs
+
     services:
       postgres:
         image: postgres:16
@@ -46,6 +51,13 @@ jobs:
       # Do not "simplify" this away, and never use continue-on-error — that
       # would mark failing steps green at the job level and destroy the gate.
       - run: npm run typecheck
+        if: ${{ success() || (!cancelled() && github.event.pull_request.draft) }}
+
+      # Carries the same condition as its neighbours on purpose: without it a
+      # draft red with an earlier failure would skip migrate entirely, leaving
+      # every later child's red run to fail on an empty database instead of on
+      # its own assertions.
+      - run: npm run db:migrate && npm run db:seed
         if: ${{ success() || (!cancelled() && github.event.pull_request.draft) }}
 
       - run: npm run test
