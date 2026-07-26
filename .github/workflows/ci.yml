@@ -53,6 +53,13 @@ jobs:
       - run: npm run typecheck
         if: ${{ success() || (!cancelled() && github.event.pull_request.draft) }}
 
+      # Carries the same condition as its neighbours on purpose: without it a
+      # draft red with an earlier failure would skip migrate entirely, leaving
+      # every later child's red run to fail on an empty database instead of on
+      # its own assertions.
+      - run: npm run db:migrate && npm run db:seed
+        if: ${{ success() || (!cancelled() && github.event.pull_request.draft) }}
+
       - run: npm run test
         if: ${{ success() || (!cancelled() && github.event.pull_request.draft) }}
 

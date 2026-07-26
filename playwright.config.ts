@@ -5,6 +5,9 @@ const baseURL = `http://localhost:${PORT}`;
 
 export default defineConfig({
   testDir: "./e2e",
+  // A file path, not an imported function — Playwright resolves and runs it in
+  // its own process.
+  globalSetup: "./e2e/global-setup.ts",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
