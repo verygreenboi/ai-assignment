@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { appName } from "@/lib/app-info";
 
 export default function Home() {
@@ -10,6 +12,14 @@ export default function Home() {
         <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
           A collaborative document editor. This build is in progress.
         </p>
+        <div>
+          <Link
+            href="/login"
+            className="inline-flex items-center rounded-lg bg-black px-4 py-2 text-base font-medium text-zinc-50 hover:bg-zinc-800 dark:bg-zinc-50 dark:text-black dark:hover:bg-zinc-200"
+          >
+            Sign in
+          </Link>
+        </div>
       </main>
     </div>
   );
