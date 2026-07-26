@@ -36,12 +36,20 @@ jobs:
 
       - run: npm ci
 
+      # Every check runs even when an earlier one fails, so a red run reports
+      # all of its failures at once instead of only the first. The job still
+      # fails if any single step fails.
       - run: npm run lint
+        if: ${{ !cancelled() }}
 
       - run: npm run typecheck
+        if: ${{ !cancelled() }}
 
       - run: npm run test
+        if: ${{ !cancelled() }}
 
       - run: npx playwright install --with-deps chromium
+        if: ${{ !cancelled() }}
 
       - run: npm run test:e2e
+        if: ${{ !cancelled() }}
