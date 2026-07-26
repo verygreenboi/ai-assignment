@@ -93,6 +93,16 @@ toolchain:
     `continue-on-error`: that marks failing steps green at the job level and
     destroys the merge gate.
 
+    PRE-PR ADVERSARIAL REVIEWS ARE SKIPPED for this epic, by operator decision
+    on 2026-07-26 (time pressure — the build simulates a 4-6h take-home). The
+    driver does NOT run the spec-compliance and quality reviewer pass before
+    merge. What still runs, and is not optional: the step-1 pin (adversarial
+    review of the plan BEFORE any code — it has caught a false library fact or a
+    broken step on every child so far), the CI-first red->green cycle with the
+    red inspected for the right reason, and the `pre-review` custom gates below.
+    The trade is explicit: defects that a diff review would have caught now
+    surface in a later child or in the submission itself.
+
     GOTCHA — `gh pr edit --body-file` SILENTLY NO-OPS on this repo. It exits 0
     while failing internally on `GraphQL: Projects (classic) is being deprecated
     ... (repository.pullRequest.projectCards)`, leaving the body unchanged. Use
