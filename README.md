@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Collab Docs
 
-## Getting Started
+A collaborative document editor, built as a take-home assignment.
 
-First, run the development server:
+**This build is in progress.** What exists today is the scaffold, the test
+harness and CI. There is no auth, no documents and no sharing yet — those land
+in later increments.
+
+## Prerequisites
+
+- Node 22
+- Docker (for the Postgres container)
+
+## Setup
 
 ```bash
+npm ci
+cp .env.example .env
+docker compose up -d --wait
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app runs at http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`docker compose up -d --wait` starts Postgres 16 and blocks until its health
+check passes. It publishes on host port **5433**, not the default 5432, so it
+will not collide with a Postgres you already have installed locally — the
+`DATABASE_URL` in `.env.example` already points there.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Checks
 
-## Learn More
+```bash
+npm run lint       # ESLint
+npm run typecheck  # tsc --noEmit
+npm run test       # Vitest
+npm run test:e2e   # Playwright
+```
 
-To learn more about Next.js, take a look at the following resources:
+Playwright needs a browser downloaded once before `npm run test:e2e` will run:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npx playwright install chromium
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`npm run test:e2e` starts the dev server itself, so you do not need to have
+`npm run dev` running. CI runs the same checks in the same order.
