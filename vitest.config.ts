@@ -11,7 +11,14 @@ export default defineConfig({
           name: "integration",
           environment: "node",
           include: ["**/*.integration.test.ts"],
-          exclude: ["**/node_modules/**"],
+          // `.worktrees/**` is not optional here: the epic driver checks child
+          // worktrees out inside the repo, so a root-level `npm run test` would
+          // otherwise double-collect every worktree's copy of these files
+          // against the one database.
+          exclude: ["**/node_modules/**", ".worktrees/**"],
+          // Nothing else loads `.env` for a plain node process — without this
+          // every integration test fails on an undefined `DATABASE_URL`.
+          setupFiles: ["dotenv/config"],
           // Parallel workers against a single database flake.
           fileParallelism: false,
         },

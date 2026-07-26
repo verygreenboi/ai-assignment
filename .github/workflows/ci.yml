@@ -14,6 +14,11 @@ jobs:
     name: ci
     runs-on: ubuntu-latest
 
+    # The service below maps 5433:5432 and every step runs on the runner host,
+    # so `localhost:5433` is what the steps see — identical to `.env.example`.
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5433/collab_docs
+
     services:
       postgres:
         image: postgres:16
