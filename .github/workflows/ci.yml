@@ -36,20 +36,23 @@ jobs:
 
       - run: npm ci
 
-      # Every check runs even when an earlier one fails, so a red run reports
-      # all of its failures at once instead of only the first. The job still
-      # fails if any single step fails.
       - run: npm run lint
-        if: ${{ !cancelled() }}
 
+      # Draft PRs are this epic's deliberate red push: run every check so the
+      # run shows exactly which assertions failed. A red that stopped at the
+      # first failing step proves nothing about the checks it skipped, and for
+      # children whose primary guard is the E2E suite that is the whole point.
+      # Ready-for-review PRs and pushes fail fast on the first error.
+      # Do not "simplify" this away, and never use continue-on-error — that
+      # would mark failing steps green at the job level and destroy the gate.
       - run: npm run typecheck
-        if: ${{ !cancelled() }}
+        if: ${{ success() || (!cancelled() && github.event.pull_request.draft) }}
 
       - run: npm run test
-        if: ${{ !cancelled() }}
+        if: ${{ success() || (!cancelled() && github.event.pull_request.draft) }}
 
       - run: npx playwright install --with-deps chromium
-        if: ${{ !cancelled() }}
+        if: ${{ success() || (!cancelled() && github.event.pull_request.draft) }}
 
       - run: npm run test:e2e
-        if: ${{ !cancelled() }}
+        if: ${{ success() || (!cancelled() && github.event.pull_request.draft) }}
