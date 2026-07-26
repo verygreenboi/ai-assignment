@@ -6,4 +6,8 @@ test("root page renders the application heading", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Collab Docs",
   );
+
+  const signIn = page.getByRole("link", { name: /sign in/i });
+  await expect(signIn).toBeVisible();
+  await expect(signIn).toHaveAttribute("href", "/login");
 });
