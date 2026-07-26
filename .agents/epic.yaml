@@ -83,6 +83,24 @@ toolchain:
     locally would have told you. Do NOT run the test suites locally as a gate;
     that is the pipeline's job now.
 
+    CI FAILS FAST, EXCEPT ON THE RED PUSH. `.github/workflows/ci.yml` carries
+    `if: ${{ success() || (!cancelled() && github.event.pull_request.draft) }}`
+    on every step after lint. Ready PRs and pushes to main stop at the first
+    failure; DRAFT PRs (this epic's red pushes) run every check so the run shows
+    which assertions failed — a red that stopped at the first failing step
+    proves nothing about the steps it skipped, and for children whose primary
+    guard is the E2E suite that is the entire point. Never replace this with
+    `continue-on-error`: that marks failing steps green at the job level and
+    destroys the merge gate.
+
+    GOTCHA — `gh pr edit --body-file` SILENTLY NO-OPS on this repo. It exits 0
+    while failing internally on `GraphQL: Projects (classic) is being deprecated
+    ... (repository.pullRequest.projectCards)`, leaving the body unchanged. Use
+    the REST path instead:
+    `gh api -X PATCH repos/verygreenboi/ai-assignment/pulls/<n> -f body=@file`
+    and re-read the body to confirm the write landed. Exit code 0 is not
+    evidence here.
+
     NEVER arm `gh pr merge --auto` before the green run. An armed PR merges the
     instant CI passes, which on the red push would merge tests with no
     implementation.
