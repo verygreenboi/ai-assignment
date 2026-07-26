@@ -93,6 +93,26 @@ toolchain:
     `continue-on-error`: that marks failing steps green at the job level and
     destroys the merge gate.
 
+    TEST LAYERS ARE CUT TO E2E + AUTHZ DENIALS from child #5 onward, by operator
+    decision on 2026-07-26 (time pressure). Every child's red is a Playwright
+    E2E spec, and that is the only mandatory layer. DROPPED: Zod schema unit
+    tests, hook unit tests, the 12-cell permission truth table, and all
+    non-authz integration tests.
+
+    ONE EXCEPTION, deliberately kept — API-level AUTHORIZATION DENIAL
+    assertions, roughly six across children #5-#7: viewer -> 403 on write,
+    no-role -> 404 (not 403), non-owner -> 403 on share. An E2E can only prove
+    the UI hides a control; it cannot prove the ROUTE refuses the request, and
+    the gap between those two claims is the exact failure the authz-enforcement
+    gate exists to catch. A reviewer replaying a viewer's cookie against
+    `PATCH /api/documents/:id` and getting 200 would have found the worst bug in
+    the submission, and access logic is a stated evaluation criterion.
+
+    Note the counterintuitive cost: under the CI-first cycle a Playwright spec
+    costs a full build + browser run per round (~5-10 min), where a unit test
+    fails in seconds. Concentrating all feedback into E2E makes each wrong guess
+    more expensive, so get the spec right before pushing.
+
     PRE-PR ADVERSARIAL REVIEWS ARE SKIPPED for this epic, by operator decision
     on 2026-07-26 (time pressure — the build simulates a 4-6h take-home). The
     driver does NOT run the spec-compliance and quality reviewer pass before
