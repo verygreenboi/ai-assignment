@@ -18,6 +18,12 @@ jobs:
     # so `localhost:5433` is what the steps see — identical to `.env.example`.
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5433/collab_docs
+      # `src/lib/session.ts` reads this once at module load and throws if it is
+      # absent, so without it `next build` dies while collecting page data for
+      # every route that imports it — the job would fail before a single
+      # assertion runs. A throwaway placeholder: this repo is public, and the
+      # value only ever signs cookies for an ephemeral CI database.
+      SESSION_SECRET: ci-only-dummy-secret-at-least-32-chars-long
 
     services:
       postgres:
