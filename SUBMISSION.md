@@ -47,8 +47,9 @@ Verifiable at the live URL and in the repository:
   entry points over a single shared implementation — `requireDocAccess` for route
   handlers and `loadDocumentForPage` for server components, which have no
   `Request` object to read a cookie from. No-access returns **404, not 403**, so
-  document ids cannot be enumerated. Tested, including the full role/capability
-  truth table.
+  document ids cannot be enumerated. The denial paths that are reachable today
+  are covered by tests; the guards have no document routes calling them yet, so
+  most of their behaviour is exercised only indirectly.
 - **The data model.** `users`, `documents`, `document_shares` with cascade
   foreign keys, a composite unique on `(document_id, user_id)`, and a `role`
   check constraint — invalid state is rejected by the database, not just by

@@ -113,7 +113,13 @@ covers what those flows cannot reach cheaply.
 - **API integration (Vitest, real Postgres)** — denial paths only: no session, no
   role, wrong capability, duplicate share, stale-version 409. Happy paths are
   already covered by E2E and testing them twice was a line we cut.
-- **Unit (Vitest)** — the `resolveRole` / `can` truth table.
+
+Test layers were deliberately cut under time pressure. Playwright E2E is the only
+mandatory layer, with a small number of API-level authorization denial assertions
+kept alongside it — an E2E can prove the UI hides a control, but never that the
+route refuses the request, and that gap is where a real security bug would hide.
+The `resolveRole` / `can` truth table, schema unit tests and hook unit tests were
+dropped. That is a real reduction in coverage, recorded here rather than glossed.
 
 CI runs lint, typecheck, Vitest and Playwright on every PR against a real
 Postgres service container. Every change lands through a CI-first red→green
