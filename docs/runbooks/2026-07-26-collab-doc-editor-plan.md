@@ -11,9 +11,26 @@ the spec disagree, **the spec wins**; report the conflict in the PR.
 
 ## Conventions for every child
 
-- **Outside-in TDD, no exceptions.** Failing test first, watch it fail for the
-  *right* reason, minimum to green, refactor green. Start at the outermost layer
-  the child can reach (Playwright > API integration > unit).
+- **Outside-in TDD, no exceptions — and the red→green cycle runs in the
+  pipeline.** Start at the outermost layer the child can reach (Playwright > API
+  integration > unit). Every child's PR carries at least two pushes:
+
+  1. **`test:` commit — the child's tests only**, plus any config or scaffolding
+     without which there is no pipeline to run them. Push, open the PR as a
+     **draft**, and let `ci` go **RED**. That run is the durable evidence the
+     tests failed before any implementation existed — something a local run can
+     never prove to a reader of the PR.
+  2. **`feat:` commit — the minimum that turns `ci` GREEN.** Then `gh pr ready`,
+     run the pre-PR reviews on the diff, and merge.
+
+  **The red must fail for the *right* reason.** Read the failed run before
+  writing a line of implementation: it must be the expected assertion failure —
+  not a missing dependency, import error, type error, or config mistake. A red
+  for the wrong reason means the test does not yet guard the behaviour: fix the
+  test, push, and get a correct red first. An uninspected red proves nothing.
+
+  Run `npm run lint && npm run typecheck` locally before each push. Do **not**
+  run the test suites locally as a gate — that is the pipeline's job now.
 - **API integration tests cover denial paths only** (spec §2.9). Happy paths are
   E2E's job. Where a denial test needs a successful call to set it up (child 6's
   409 needs a prior 200), that is sequencing, not a happy-path test.
@@ -25,8 +42,9 @@ the spec disagree, **the spec wins**; report the conflict in the PR.
   surfaces as an unrelated red in a later child.
 - **Branch:** `feat/<n>-<slug>` off `main`. **Commits:** Conventional Commits, no
   AI-attribution trailers in commits or PR bodies.
-- **Before proposing a PR:** `npm run lint && npm run typecheck && npm run test &&
-  npm run test:e2e` all green.
+- **Before marking the PR ready:** `ci` green on the latest head, both pre-PR
+  reviews clean. `--auto` is armed only after that — never on the red push, which
+  would merge tests with no implementation the moment CI passed.
 - **Scope discipline:** build the child's deliverable and stop. The *only*
   exception is the add-back rule below.
 - **Human handoffs are explicit.** Children 1, 8 and 10 contain steps an
@@ -80,9 +98,15 @@ Children 4, 5 and 7 have items on that list; children 5, 6 and 7 **must read
 | 9 | Submission documents | 35m | 340m |
 | 10 | Video and Drive bundle *(human)* | 30m | 370m |
 
-**≈ 6h10m** — the fourth estimate; the first two were fiction. Assumes E2E against
-the dev server locally (production build only in CI) and denial-path-only
-integration tests.
+**≈ 6h10m** — the fourth estimate; the first two were fiction. Assumes
+denial-path-only integration tests.
+
+Each child's **Verify** section lists the commands that must pass; under the
+CI-first cycle above those are what the `ci` job runs on the PR, not a local
+gate. Budgets count hands-on time, not the wall-clock spent waiting on a
+pipeline — two CI round-trips per child (red, then green) add real elapsed time
+that these numbers do not include. `docs/CLOCK.md` records actual minutes, and
+`docs/AI-WORKFLOW.md` reports what it says.
 
 ### Pinned facts (verified empirically 2026-07-26 — do not re-derive)
 

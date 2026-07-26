@@ -58,7 +58,34 @@ toolchain:
     API integration tests cover DENIAL PATHS ONLY — happy paths belong to E2E.
     `npm run test:e2e` = Playwright, against `npm run dev` locally and
     `npm run build && npm run start` in CI, with a globalSetup that runs
-    migrate+seed so E2E is re-runnable. Both must pass before a PR is proposed.
+    migrate+seed so E2E is re-runnable.
+
+    RED-GREEN HAPPENS IN THE PIPELINE, NOT LOCALLY. Every child's PR carries at
+    least two pushes:
+
+      1. `test:` commit — the child's tests ONLY (E2E, integration, unit, per the
+         runbook's TDD order), plus any config/scaffolding without which there is
+         no pipeline to run them. Push, open the PR as a DRAFT, and let `ci` go
+         RED. That red run is the durable proof the tests genuinely failed before
+         the implementation existed.
+      2. `feat:`/`fix:` commit — the minimum implementation that turns `ci` GREEN.
+         Then `gh pr ready`, run the pre-PR reviews on the diff, and merge.
+
+    THE RED MUST FAIL FOR THE RIGHT REASON. Read the failed run before writing any
+    implementation: it must be the expected assertion failure, not a missing
+    dependency, import error, type error or config mistake. A red for the wrong
+    reason means the test does not yet guard the behaviour — fix the test, push,
+    and get a correct red before proceeding. A red run that was never inspected is
+    not evidence of anything.
+
+    Run `npm run lint && npm run typecheck` locally before each push — a pipeline
+    that reddens on a type error costs a CI round to learn what ten seconds
+    locally would have told you. Do NOT run the test suites locally as a gate;
+    that is the pipeline's job now.
+
+    NEVER arm `gh pr merge --auto` before the green run. An armed PR merges the
+    instant CI passes, which on the red push would merge tests with no
+    implementation.
 
     Conventional Commits. NO AI-attribution trailers in commits or PR bodies
     (no `Co-Authored-By: Claude`, no "Generated with Claude Code" footer).
