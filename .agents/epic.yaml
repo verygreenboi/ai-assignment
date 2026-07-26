@@ -1,0 +1,172 @@
+# Repo-level config for the epic-driver plugin (/epic, /epic:create, /epic:migrate).
+# Repo: verygreenboi/ai-assignment — Ajaia take-home, collaborative document editor.
+
+repo: verygreenboi/ai-assignment
+
+toolchain:
+  runtime: node
+  prefix: ""
+  commands:
+    setup: "npm ci && docker compose up -d --wait && npm run db:migrate"
+    lint: "npm run lint"
+    typecheck: "npm run typecheck"
+    test: "npm run test"
+    e2e: "npm run test:e2e"
+    build: "npm run build"
+  notes: |
+    SETUP IS NOT VALID FOR EVERY CHILD. The `setup` command above assumes the
+    scaffold, the compose file and the db scripts all exist. On child 1 nothing
+    exists yet (setup is a no-op — the child creates it); on child 2
+    `npm run db:migrate` is created BY that child, so setup is
+    `npm ci && docker compose up -d --wait` there. From child 3 onward the
+    command above is correct as written.
+
+    Next.js 16 (App Router, TypeScript, Turbopack default) + Drizzle ORM over
+    Postgres 16. `src/proxy.ts` is Next 16's rename of `middleware.ts` and
+    defaults to the Node runtime; it must NEVER import the Drizzle client.
+    The Drizzle driver is `drizzle-orm/node-postgres` everywhere — do NOT switch
+    to `neon-http` or an edge runtime, it breaks the shared test path.
+
+    Verified library facts, do not re-derive: `@tiptap/starter-kit@3` already
+    bundles Underline (do not install `@tiptap/extension-underline`);
+    `StarterKit.configure({ heading: { levels: [1,2,3] } })` is valid on v3;
+    Vitest 4 REMOVED `environmentMatchGlobs` — use `test.projects`, and give the
+    jsdom project an explicit `exclude` for `**/*.integration.test.ts` or those
+    files run in BOTH projects; Playwright `globalSetup` takes a FILE PATH whose
+    module default-exports `(config) => Promise<void>`.
+
+    Two guard entry points, one brain (spec §2.3): route handlers call
+    `requireDocAccess(request, id, capability)`; server components call
+    `loadDocumentForPage(id, capability)`, which reads the cookie via
+    `next/headers`. A server component has no `Request` — that is why the second
+    door exists. Both live in `src/lib/require-doc-access.ts` and share one
+    query and one `resolveRole`/`can` call.
+
+    Required env (`.env.example` is the source of truth): `DATABASE_URL` and
+    `SESSION_SECRET` (32+ chars, throws at boot if absent). That is all — there
+    is no object storage in this build (see the spec's rejected alternatives).
+    `docker compose up -d --wait` provides Postgres on :5433. Reviewers need no
+    cloud account and no paid service to run this locally.
+
+    THIS REPO IS PUBLIC. No connection string, token or secret may be committed.
+    `.gitignore` must cover `.env` and `.env*.local`; `.env.example` stays
+    placeholder-only.
+
+    `npm run test` = Vitest with `test.projects`: a node project for
+    `**/*.integration.test.ts` with `fileParallelism: false` (parallel workers
+    against one database flake), and a jsdom project that EXCLUDES those files.
+    API integration tests cover DENIAL PATHS ONLY — happy paths belong to E2E.
+    `npm run test:e2e` = Playwright, against `npm run dev` locally and
+    `npm run build && npm run start` in CI, with a globalSetup that runs
+    migrate+seed so E2E is re-runnable. Both must pass before a PR is proposed.
+
+    Conventional Commits. NO AI-attribution trailers in commits or PR bodies
+    (no `Co-Authored-By: Claude`, no "Generated with Claude Code" footer).
+
+    TIMEBOX AND THE CLOCK. This is a 4-6h take-home simulation; the runbook
+    budgets 10 children at ~6h10m. An autonomous driver has no session-spanning
+    clock, so elapsed time lives in `docs/CLOCK.md`: every child except 10
+    appends one line (`child-N: <minutes> (started <ISO>, pr-ready <ISO>)`) in
+    its PR; child 10 has no PR and appends via its `docs:` commit to main.
+    Blowing a budget does not abort a child — finish the smallest green slice,
+    apply the child's cut floor, and flag the overrun in the PR body. At child
+    4's merge, sum CLOCK.md; if > 155 minutes append `CUTS-FIRED: no add-backs`
+    via a `docs:` commit to main. Children 4-7 MUST read CLOCK.md before writing
+    any test — it is the only channel by which that decision reaches them.
+
+    Do not add scope beyond the child's stated deliverable. The ONE exception is
+    the add-back rule: a child may implement the topmost item on the spec's §5
+    add-back list that falls inside its own surface, but only if its base
+    deliverable is green, it has >=10 unused budget minutes, AND CLOCK.md has no
+    CUTS-FIRED line. Otherwise anything tempting-but-out-of-scope goes in the
+    spec's §5 lists, not into the code — deliberate scope cuts are part of the
+    graded artifact.
+
+planning:
+  repo: verygreenboi/ai-assignment
+  project: 1   # backfilled at materialization — the ProjectV2 does not exist yet
+
+merge:
+  method: squash
+  required_checks: ["ci"]
+  approvals: 0
+  require_last_push_approval: false
+  required_review_thread_resolution: true
+  copilot_review: false
+  notes: |
+    Solo repo, no branch protection ruleset. The driver merges once `ci`
+    (lint + typecheck + vitest + playwright) is green on the latest head and
+    every review thread is resolved. Squash-merge keeps main a clean, readable
+    history — reviewers of the take-home WILL read the commit log.
+
+    Children 1, 8 and 10 contain human handoffs (Vercel auth, the production
+    deploy, recording the video, assembling the Drive folder). A missing
+    credential must never block a PR: record the handoff in the PR body and
+    merge on green. Child 10 has no PR at all — it closes on manual
+    done-criteria, and its closing comment must carry the Drive and video URLs.
+
+docs:
+  spec_dir: docs/specs
+  runbook_dir: docs/runbooks
+
+worktrees:
+  root: .worktrees
+  max_concurrent: 1   # the child chain is strictly linear — see the runbook's DAG
+
+gates:
+  db-migration-safety:
+    hook: pre-review
+    required_when: "child adds or edits anything under drizzle/ or src/db/schema.ts"
+    procedure: |
+      A generated migration must be inspected, never trusted blind. Confirm:
+      (1) `npm run db:generate` output is committed and matches schema.ts —
+      no hand-edited SQL drifting from the TS source; (2) every FK has an
+      explicit ON DELETE behaviour (documents.owner_id and both document_shares
+      FKs are CASCADE — deleting a user must not orphan rows); (3) the
+      (document_id, user_id) uniqueness constraint on document_shares exists —
+      it is the invariant that stops duplicate shares; (4) the migration
+      applies cleanly to an EMPTY database (`docker compose down -v &&
+      docker compose up -d --wait && npm run db:migrate && npm run db:seed`)
+      because that is exactly what the production Neon database will be.
+      Any failure -> fix before review.
+
+  authz-enforcement:
+    hook: pre-review
+    required_when: "child adds or edits any route handler under src/app/api/**"
+    procedure: |
+      Access control is the dimension this take-home is graded hardest on, and
+      the only one where a UI-only check reads as a real security bug. For every
+      route handler touched by the child, confirm: (1) it calls the shared
+      `requireDocAccess(request, documentId, capability)` guard (or
+      `requireSession()` for non-document routes) BEFORE reading or writing
+      anything — no handler resolves permission inline, and any SERVER COMPONENT
+      reaching document data uses `loadDocumentForPage(id, capability)` from the
+      same module, never an ad-hoc query; (2) the requested
+      capability matches the action — 'read' for GET, 'write' for content/title
+      mutation, 'share' for anything under /shares and for DELETE of the
+      document; (3) a caller with no access gets 404, not 403, so document
+      existence is not leaked; (4) there is a test asserting the denial path,
+      not only the happy path.
+
+      CARVE-OUT: `/api/auth/login` and `/api/auth/logout` are the session entry
+      points and by construction cannot call `requireSession`. They satisfy this
+      gate by touching no document data and by having their own denial test
+      (unknown email -> 401, no Set-Cookie).
+
+      Hiding a control in the UI while leaving the route open is a gate FAILURE
+      even if the demo looks correct.
+
+  reviewer-can-run-it:
+    hook: pre-review
+    required_when: "child changes package.json scripts, .env.example, docker-compose.yml, .github/workflows/ci.yml, README.md, or any deploy config"
+    procedure: |
+      The deliverable is judged by someone who has never seen this repo and will
+      give it about ten minutes. After the change, re-verify from a clean clone
+      mindset: the README's quoted commands are the commands that actually exist
+      in package.json; `.env.example` lists every var the app reads (`grep -rn
+      "process.env" src/` to confirm none are missing); the `ci` job has the env
+      and service containers every test it runs actually needs; and no step
+      requires a paid service or a cloud account the reviewer must create. Also
+      confirm no secret or connection string entered git — this repo is public.
+      If a command in the README would fail on a fresh machine, the child is not
+      done.
