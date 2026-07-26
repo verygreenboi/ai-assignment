@@ -1,0 +1,46 @@
+# dependencies
+node_modules/
+
+# testing
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+
+# production
+build/
+dist/
+
+# env files — NEVER commit, this repository is public
+.env
+.env*.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# editors and local tooling
+.idea/
+.vscode/
+node-compile-cache/
+
+# local agent routing instructions — not part of the submission
+CLAUDE.md
+
+# epic driver worktrees
+.worktrees/
